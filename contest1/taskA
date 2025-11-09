@@ -1,0 +1,77 @@
+#include <iostream>
+#include <vector>
+
+void Merge(std::vector<std::pair<int, int>>& arr, int l, int mid, int r) {
+  int n1 = mid - l + 1;
+  int n2 = r - mid;
+  std::vector<std::pair<int, int>> lh(n1);
+  std::vector<std::pair<int, int>> rh(n2);
+  for (int i = 0; i < n1; ++i) {
+    lh[i] = arr[l + i];
+  }
+  for (int i = 0; i < n2; ++i) {
+    rh[i] = arr[mid + 1 + i];
+  }
+  int i = 0;
+  int j = 0;
+  int k = l;
+  while (i < n1 && j < n2) {
+    if (lh[i].first <= rh[j].first) {
+      arr[k] = lh[i];
+      ++i;
+    } else {
+      arr[k] = rh[j];
+      ++j;
+    }
+    ++k;
+  }
+  while (i < n1) {
+    arr[k] = lh[i];
+    ++k;
+    ++i;
+  }
+  while (j < n2) {
+    arr[k] = rh[j];
+    ++k;
+    ++j;
+  }
+}
+
+void Mergesort(std::vector<std::pair<int, int>>& arr, int l, int r) {
+  if (l >= r) {
+    return;
+  }
+  int mid = (r + l) / 2;
+  Mergesort(arr, l, mid);
+  Mergesort(arr, mid + 1, r);
+  Merge(arr, l, mid, r);
+}
+
+int main() {
+  int n = 0;
+  std::cin >> n;
+  std::vector<std::pair<int, int>> segm(n);
+  for (int i = 0; i < n; ++i) {
+    std::cin >> segm[i].first >> segm[i].second;
+  }
+  Mergesort(segm, 0, n - 1);
+  std::vector<std::pair<int, int>> res;
+  int curr_l = segm[0].first;
+  int curr_r = segm[0].second;
+  for (int i = 1; i < n; ++i) {
+    if (segm[i].first <= curr_r) {
+      if (segm[i].second > curr_r) {
+        curr_r = segm[i].second;
+      }
+    } else {
+      res.push_back({curr_l, curr_r});
+      curr_l = segm[i].first;
+      curr_r = segm[i].second;
+    }
+  }
+  res.push_back({curr_l, curr_r});
+  std::cout << res.size() << '\n';
+  for (size_t i = 0; i < res.size(); ++i) {
+    std::cout << res[i].first << " " << res[i].second << '\n';
+  }
+}
