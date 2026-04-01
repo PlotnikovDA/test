@@ -2,63 +2,72 @@
 #include <string>
 #include <vector>
 
-const int cM = 55;
-long long adj[cM];
-int n_1 = 0;
-std::vector<int> dp;
-long long total = 0;
-
-void Dfs(int idx, long long allowed_a, long long allowed_b) {
-  if (idx == n_1) {
-    total += dp[allowed_b];
-    return;
-  }
-  Dfs(idx + 1, allowed_a, allowed_b);
-  if (((allowed_a >> idx) & 1) != 0) {
-    long long next_a = allowed_a & adj[idx];
-    long long next_b = allowed_b & (adj[idx] >> n_1);
-    Dfs(idx + 1, next_a, next_b);
-  }
-}
-
 int main() {
-  int n;
+  std::ios_base::sync_with_stdio(false);
+  std::cin.tie(NULL);
+  int n = 0;
   std::cin >> n;
+  std::vector<long long> g(n, 0);
   for (int i = 0; i < n; ++i) {
     std::string s;
     std::cin >> s;
-    adj[i] = 0;
     for (int j = 0; j < n; ++j) {
       if (s[j] == '1') {
-        adj[i] |= (1LL << j);
+        g[i] |= (1LL << j);
       }
     }
-    adj[i] |= (1LL << i);
+    g[i] |= (1LL << i);
   }
-  n_1 = n / 2;
-  long long k = n - n_1;
-  dp.assign(1 << k, 0);
-  dp[0] = 1;
-  for (int i = 0; i < k; ++i) {
-    int v = n_1 + i;
-    long long neigh = (adj[v] >> n_1) & ((1LL << k) - 1);
-    for (int mask = 0; mask < (1 << i); ++mask) {
-      if (dp[mask] != 0) {
-        if ((mask & neigh) == mask) {
-          dp[mask | (1 << i)] = 1;
-        }
+  int n1 = n / 2;
+  int n2 = n - n1;
+  std::vector<int> dp(1 << n1, -1);
+  dp[0] = (1 << n2) - 1;
+  int oldest_l = -1;
+  for (int mask = 1; mask < (1 << n1); ++mask) {
+    if (mask == (1 << (oldest_l + 1))) {
+      ++oldest_l;
+    }
+    int v = oldest_l;
+    int mask_without_v = mask ^ (1 << v);
+    if (dp[mask_without_v] != -1) {
+      int neighbors_in_l = g[v] & ((1 << n1) - 1);
+      if ((mask_without_v & neighbors_in_l) == mask_without_v) {
+        int neighbors_in_r = (g[v] >> n1) & ((1 << n2) - 1);
+        dp[mask] = dp[mask_without_v] & neighbors_in_r;
       }
     }
   }
-  for (int i = 0; i < k; ++i) {
+  std::vector<int> count_r(1 << n2, 0);
+  count_r[0] = 1;
+  int oldest_r = -1;
+  for (int mask = 1; mask < (1 << n2); ++mask) {
+    if (mask == (1 << (oldest_r + 1))) {
+      ++oldest_r;
+    }
+    int v = oldest_r;
+    int actual_v = n1 + v;
+    int mask_without_v = mask ^ (1 << v);
+    if (count_r[mask_without_v] == 1) {
+      int neighbors_in_r = (g[actual_v] >> n1) & ((1 << n2) - 1);
+      if ((mask_without_v & neighbors_in_r) == mask_without_v) {
+        count_r[mask] = 1;
+      }
+    }
+  }
+  for (int i = 0; i < n2; ++i) {
     int half = 1 << i;
     int step = 1 << (i + 1);
-    for (int mask = 0; mask < (1 << k); mask += step) {
+    for (int mask = 0; mask < (1 << n2); mask += step) {
       for (int j = 0; j < half; ++j) {
-        dp[mask + half + j] += dp[mask + j];
+        count_r[mask + half + j] += count_r[mask + j];
       }
     }
   }
-  Dfs(0, (1LL << n_1) - 1, (1LL << k) - 1);
-  std::cout << total << "\n";
+  long long total_cliques = 0;
+  for (int mask = 0; mask < (1 << n1); ++mask) {
+    if (dp[mask] != -1) {
+      total_cliques += count_r[dp[mask]];
+    }
+  }
+  std::cout << total_cliques << "\n";
 }
