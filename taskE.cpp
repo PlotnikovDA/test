@@ -1,26 +1,31 @@
 #include <algorithm>
-#include <array>
 #include <iostream>
 #include <vector>
+
+struct Item {
+    int c;
+    int w;
+    int id;
+};
 
 int main() {
   int n = 0;
   int m = 0;
   std::cin >> n >> m;
-  std::vector<std::array<int, 3>> w(n);
+  std::vector<Item> items(n);
   for (int i = 0; i < n; ++i) {
-    std::cin >> w[i][1];
+    std::cin >> items[i].w;
   }
   for (int i = 0; i < n; ++i) {
-    std::cin >> w[i][0];
-    w[i][2] = i + 1;
+    std::cin >> items[i].c;
+    items[i].id = i + 1;
   }
   std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
   for (int i = 1; i <= n; ++i) {
     for (int j = 0; j <= m; ++j) {
-      if (w[i - 1][1] <= j) {
+      if (items[i - 1].w <= j) {
         dp[i][j] =
-            std::max(dp[i - 1][j], dp[i - 1][j - w[i - 1][1]] + w[i - 1][0]);
+            std::max(dp[i - 1][j], dp[i - 1][j - items[i - 1].w] + items[i - 1].c);
       } else {
         dp[i][j] = dp[i - 1][j];
       }
@@ -30,8 +35,8 @@ int main() {
   int cur_m = m;
   for (int i = n; i > 0; --i) {
     if (dp[i][cur_m] != dp[i - 1][cur_m]) {
-      ans.push_back(w[i - 1][2]);
-      cur_m -= w[i - 1][1];
+      ans.push_back(items[i - 1].id);
+      cur_m -= items[i - 1].w;
     }
   }
   std::sort(ans.begin(), ans.end());
