@@ -3,35 +3,35 @@
 #include <utility>
 #include <vector>
 
-int tmr_v = 0;
-std::vector<int> t_in;
-std::vector<int> l_w;
-std::vector<int> u_f;
-std::vector<int> ans_b;
+int timer = 0;
+std::vector<int> time_in;
+std::vector<int> min_reachable_time;
+std::vector<int> visited;
+std::vector<int> bridge_indices;
 
-void Dfs(int v, int p_edge,
-         const std::vector<std::vector<std::pair<int, int>>>& g) {
-  u_f[v] = 1;
-  tmr_v = tmr_v + 1;
-  t_in[v] = tmr_v;
-  l_w[v] = tmr_v;
-  for (size_t i = 0; i < g[v].size(); ++i) {
-    int to = g[v][i].first;
-    int id = g[v][i].second;
-    if (id == p_edge) {
+void Dfs(int current_node, int parent_edge_index,
+                    const std::vector<std::vector<std::pair<int, int>>>& adj_list) {
+  visited[current_node] = 1;
+  timer = timer + 1;
+  time_in[current_node] = timer;
+  min_reachable_time[current_node] = timer;
+  for (size_t i = 0; i < adj_list[current_node].size(); ++i) {
+    int neighbor = adj_list[current_node][i].first;
+    int edge_index = adj_list[current_node][i].second;
+    if (edge_index == parent_edge_index) {
       continue;
     }
-    if (u_f[to] == 1) {
-      if (t_in[to] < l_w[v]) {
-        l_w[v] = t_in[to];
+    if (visited[neighbor] == 1) {
+      if (time_in[neighbor] < min_reachable_time[current_node]) {
+        min_reachable_time[current_node] = time_in[neighbor];
       }
     } else {
-      Dfs(to, id, g);
-      if (l_w[to] < l_w[v]) {
-        l_w[v] = l_w[to];
+      Dfs(neighbor, edge_index, adj_list);
+      if (min_reachable_time[neighbor] < min_reachable_time[current_node]) {
+        min_reachable_time[current_node] = min_reachable_time[neighbor];
       }
-      if (l_w[to] > t_in[v]) {
-        ans_b.push_back(id);
+      if (min_reachable_time[neighbor] > time_in[current_node]) {
+        bridge_indices.push_back(edge_index);
       }
     }
   }
@@ -40,29 +40,29 @@ void Dfs(int v, int p_edge,
 int main() {
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(NULL);
-  int n = 0;
-  int m = 0;
-  std::cin >> n >> m;
-  std::vector<std::vector<std::pair<int, int>>> g(n + 1);
-  for (int i = 1; i <= m; ++i) {
-    int u = 0;
-    int v = 0;
-    std::cin >> u >> v;
-    g[u].push_back(std::make_pair(v, i));
-    g[v].push_back(std::make_pair(u, i));
+  int num_vertices = 0;
+  int num_edges = 0;
+  std::cin >> num_vertices >> num_edges;
+  std::vector<std::vector<std::pair<int, int>>> adj_list(num_vertices + 1);
+  for (int i = 1; i <= num_edges; ++i) {
+    int from = 0;
+    int to = 0;
+    std::cin >> from >> to;
+    adj_list[from].push_back(std::make_pair(to, i));
+    adj_list[to].push_back(std::make_pair(from, i));
   }
-  t_in.resize(n + 1, 0);
-  l_w.resize(n + 1, 0);
-  u_f.resize(n + 1, 0);
-  for (int i = 1; i <= n; ++i) {
-    if (u_f[i] == 0) {
-      Dfs(i, -1, g);
+  time_in.resize(num_vertices + 1, 0);
+  min_reachable_time.resize(num_vertices + 1, 0);
+  visited.resize(num_vertices + 1, 0);
+  for (int i = 1; i <= num_vertices; ++i) {
+    if (visited[i] == 0) {
+      Dfs(i, -1, adj_list);
     }
   }
-  std::sort(ans_b.begin(), ans_b.end());
-  std::cout << ans_b.size() << "\n";
-  for (size_t i = 0; i < ans_b.size(); ++i) {
-    std::cout << ans_b[i] << " ";
+  std::sort(bridge_indices.begin(), bridge_indices.end());
+  std::cout << bridge_indices.size() << "\n";
+  for (size_t i = 0; i < bridge_indices.size(); ++i) {
+    std::cout << bridge_indices[i] << " ";
   }
   std::cout << "\n";
 }
