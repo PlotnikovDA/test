@@ -1,32 +1,32 @@
 #include <iostream>
 #include <vector>
 
-const long long cInf = 1000000000000000000LL;
-long long exact = -cInf;
-long long st_val = 0;
+const long long INF = 1000000000000000000LL;
+long long exact_first_val = -INF;
+long long final_first_val = 0;
 
-void Bfs(std::vector<std::vector<int>>& g, std::vector<std::vector<int>>& gw,
-         std::vector<int>& used, std::vector<int>& sign_v,
-         std::vector<long long>& val_v, std::vector<int>& q) {
+void Bfs(std::vector<std::vector<int>>& adj_list, std::vector<std::vector<int>>& edge_weights,
+         std::vector<int>& visited, std::vector<int>& coefficient,
+         std::vector<long long>& constant_term, std::vector<int>& queue) {
   int head = 0;
-  q.push_back(1);
-  used[1] = 1;
-  sign_v[1] = 1;
-  val_v[1] = 0;
-  while (head < (int)q.size()) {
-    int v = q[head];
+  queue.push_back(1);
+  visited[1] = 1;
+  coefficient[1] = 1;
+  constant_term[1] = 0;
+  while (head < (int)queue.size()) {
+    int current_node = queue[head];
     ++head;
-    for (size_t i = 0; i < g[v].size(); ++i) {
-      int to = g[v][i];
-      long long w = gw[v][i];
-      if (used[to] == 0) {
-        used[to] = 1;
-        sign_v[to] = -sign_v[v];
-        val_v[to] = w - val_v[v];
-        q.push_back(to);
-      } else if (sign_v[to] == sign_v[v]) {
-        long long diff = w - val_v[v] - val_v[to];
-        exact = diff / (sign_v[v] + sign_v[to]);
+    for (size_t i = 0; i < adj_list[current_node].size(); ++i) {
+      int neighbor = adj_list[current_node][i];
+      long long weight = edge_weights[current_node][i];
+      if (visited[neighbor] == 0) {
+        visited[neighbor] = 1;
+        coefficient[neighbor] = -coefficient[current_node];
+        constant_term[neighbor] = weight - constant_term[current_node];
+        queue.push_back(neighbor);
+      } else if (coefficient[neighbor] == coefficient[current_node]) {
+        long long remaining_weight = weight - constant_term[current_node] - constant_term[neighbor];
+        exact_first_val = remaining_weight / (coefficient[current_node] + coefficient[neighbor]);
       }
     }
   }
@@ -35,64 +35,64 @@ void Bfs(std::vector<std::vector<int>>& g, std::vector<std::vector<int>>& gw,
 int main() {
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(NULL);
-  int n = 0;
-  int m = 0;
-  std::cin >> n >> m;
-  std::vector<std::vector<int>> g(n + 1);
-  std::vector<std::vector<int>> gw(n + 1);
-  std::vector<int> used(n + 1, 0);
-  std::vector<int> sign_v(n + 1, 0);
-  std::vector<long long> val_v(n + 1, 0);
-  std::vector<int> q;
-  for (int i = 0; i < m; ++i) {
+  int num_vertices = 0;
+  int num_edges = 0;
+  std::cin >> num_vertices >> num_edges;
+  std::vector<std::vector<int>> adj_list(num_vertices + 1);
+  std::vector<std::vector<int>> edge_weights(num_vertices + 1);
+  std::vector<int> visited(num_vertices + 1, 0);
+  std::vector<int> coefficient(num_vertices + 1, 0);
+  std::vector<long long> constant_term(num_vertices + 1, 0);
+  std::vector<int> queue;
+  for (int i = 0; i < num_edges; ++i) {
     int u = 0;
     int v = 0;
-    int w = 0;
-    std::cin >> u >> v >> w;
-    g[u].push_back(v);
-    gw[u].push_back(w);
-    g[v].push_back(u);
-    gw[v].push_back(w);
+    int weight = 0;
+    std::cin >> u >> v >> weight;
+    adj_list[u].push_back(v);
+    edge_weights[u].push_back(weight);
+    adj_list[v].push_back(u);
+    edge_weights[v].push_back(weight);
   }
-  Bfs(g, gw, used, sign_v, val_v, q);
-  if (exact != -cInf) {
-    st_val = exact;
+  Bfs(adj_list, edge_weights, visited, coefficient, constant_term, queue);
+  if (exact_first_val != -INF) {
+    final_first_val = exact_first_val;
   } else {
-    long long min_a = cInf;
-    long long min_b = cInf;
-    for (int i = 1; i <= n; ++i) {
-      if (sign_v[i] == 1) {
-        if (val_v[i] < min_a) {
-          min_a = val_v[i];
+    long long min_pos_const = INF;
+    long long min_neg_const = INF;
+    for (int i = 1; i <= num_vertices; ++i) {
+      if (coefficient[i] == 1) {
+        if (constant_term[i] < min_pos_const) {
+          min_pos_const = constant_term[i];
         }
       } else {
-        if (val_v[i] < min_b) {
-          min_b = val_v[i];
+        if (constant_term[i] < min_neg_const) {
+          min_neg_const = constant_term[i];
         }
       }
     }
-    st_val = 1 - min_a;
-    int k = 1;
-    std::vector<int> chk_p(n + 1, 0);
-    for (int i = 1; i <= n; ++i) {
-      long long ans = sign_v[i] * st_val + val_v[i];
-      if (ans < 1 || ans > n) {
-        k = 0;
+    final_first_val = 1 - min_pos_const;
+    int is_valid = 1;
+    std::vector<int> seen_values(num_vertices + 1, 0);
+    for (int i = 1; i <= num_vertices; ++i) {
+      long long current_val = coefficient[i] * final_first_val + constant_term[i];
+      if (current_val < 1 || current_val > num_vertices) {
+        is_valid = 0;
         break;
       }
-      if (chk_p[ans] == 1) {
-        k = 0;
+      if (seen_values[current_val] == 1) {
+        is_valid = 0;
         break;
       }
-      chk_p[ans] = 1;
+      seen_values[current_val] = 1;
     }
-    if (k == 0) {
-      st_val = min_b - 1;
+    if (is_valid == 0) {
+      final_first_val = min_neg_const - 1;
     }
   }
-  for (int i = 1; i <= n; ++i) {
-    long long ans = sign_v[i] * st_val + val_v[i];
-    std::cout << ans << " ";
+  for (int i = 1; i <= num_vertices; ++i) {
+    long long current_val = coefficient[i] * final_first_val + constant_term[i];
+    std::cout << current_val << " ";
   }
   std::cout << "\n";
 }
